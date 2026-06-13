@@ -25,7 +25,11 @@
     <canvas id="bg-canvas"></canvas>
     
     <div class="content">
-        <input type="text" id="nick" class="nick-input" value="mintxup" spellcheck="false" autocomplete="off">
+        <div class="input-wrapper">
+            <input type="text" id="nick" class="nick-input" value="mintxup" spellcheck="false" autocomplete="off">
+            <span id="nick-sizer" class="input-sizer" aria-hidden="true"></span>
+            <span id="nick-cursor" class="cursor-char">|</span>
+        </div>
         <div class="links">
             <a href="https://t.me/mintxup" class="link" target="_blank" rel="noopener noreferrer">Telegram</a>
             <a href="https://youtube.com/@mintxup" class="link" target="_blank" rel="noopener noreferrer">Youtube</a>

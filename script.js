@@ -134,6 +134,8 @@ if (isTouchDevice) {
 
 // Mobile: make nick input readonly to prevent virtual keyboard
 const nickInput = document.getElementById('nick');
+const nickSizer = document.getElementById('nick-sizer');
+const nickCursor = document.getElementById('nick-cursor');
 if (isTouchDevice) {
     nickInput.setAttribute('readonly', true);
     nickInput.style.pointerEvents = 'none';
@@ -143,7 +145,9 @@ let typingTimer;
 let deletingInterval;
 
 function adjustInputWidth() {
-    nickInput.style.width = Math.max(1, nickInput.value.length) + "ch";
+    if (nickSizer) {
+        nickSizer.textContent = nickInput.value.replace(/ /g, '\u00a0') || '\u00a0';
+    }
 }
 
 function startReverting() {
@@ -212,7 +216,7 @@ const numParticles = isTouchDevice ? 150 : 250;
 let shockwaves = [];
 let powerCircleRadius = 0;
 
-const domElements = [nickInput, ...document.querySelectorAll('.link')];
+const domElements = [nickInput, nickCursor, ...document.querySelectorAll('.link')].filter(Boolean);
 const bumps = new Map();
 domElements.forEach(el => bumps.set(el, { x: 0, y: 0, rot: 0, hovered: false }));
 
@@ -548,8 +552,17 @@ topSecretBtn.addEventListener('click', () => {
     const nickRect = nickInput.getBoundingClientRect();
     const nickVal = nickInput.value;
     nickInput.style.opacity = '0';
+    const wrapper = nickInput.closest('.input-wrapper');
+    if (wrapper) wrapper.classList.add('exploded');
     for (let i = 0; i < nickVal.length; i++) {
         createFallingChar(nickVal[i], nickRect.left + (i * (nickRect.width / Math.max(1, nickVal.length))), nickRect.top, true);
+    }
+
+    // Explode nick cursor
+    if (nickCursor) {
+        const cursorRect = nickCursor.getBoundingClientRect();
+        nickCursor.style.opacity = '0';
+        createFallingChar('|', cursorRect.left, cursorRect.top, true);
     }
 
     // Explode links
