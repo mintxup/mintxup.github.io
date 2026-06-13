@@ -4,13 +4,75 @@
     box-sizing: border-box;
 }
 
-body {
+@font-face {
+    font-family: 'SanFrancisco';
+    src: url('san-francisco.otf') format('opentype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+.no-transition,
+.no-transition * {
+    transition: none !important;
+}
+
+html {
+    width: 100%;
+    height: 100%;
     background-color: #000;
+    transition: background-color 0.3s;
+}
+
+html.light-theme {
+    background-color: #fff;
+}
+
+body {
+    width: 100%;
+    height: 100%;
+    background-color: transparent;
     color: #fff;
-    font-family: "Courier New", Courier, monospace;
+    font-family: 'SanFrancisco', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     overflow: hidden;
     user-select: none;
     -webkit-user-select: none;
+}
+
+body.shake-cursor {
+    animation: shake 0.2s ease-in-out;
+}
+
+@keyframes shake {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(-5px) rotate(-1deg); }
+    50% { transform: translateX(5px) rotate(1deg); }
+    75% { transform: translateX(-5px) rotate(-1deg); }
+    100% { transform: translateX(0); }
+}
+
+#red-flash {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 99;
+    display: none;
+}
+
+@keyframes blinkRed {
+    0%, 100% { background-color: rgba(255, 0, 0, 0); }
+    50% { background-color: rgba(255, 0, 0, 0.4); }
+}
+
+#red-flash.active {
+    display: block;
+    animation: blinkRed 0.5s infinite;
+}
+
+html.light-theme body {
+    color: #000;
 }
 
 /* Loader Overlay */
@@ -53,7 +115,7 @@ body {
 }
 
 #click-to-enter {
-    font-family: "Courier New", Courier, monospace;
+    font-family: 'SanFrancisco', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     font-size: 1.2rem;
     color: #fff;
     letter-spacing: 2px;
@@ -79,6 +141,47 @@ canvas {
     width: 100vw;
     height: 100vh;
     z-index: 1;
+    view-transition-name: canvas-layer;
+}
+
+::view-transition-group(canvas-layer) {
+    animation: none;
+}
+
+::view-transition-old(canvas-layer) {
+    display: none;
+}
+
+::view-transition-new(canvas-layer) {
+    animation: none;
+    mix-blend-mode: normal;
+}
+
+::view-transition-group(content-layer) {
+    animation-duration: 500ms;
+    animation-timing-function: ease-in-out;
+    z-index: 10000;
+}
+
+::view-transition-old(content-layer),
+::view-transition-new(content-layer) {
+    animation-duration: 500ms;
+    animation-timing-function: ease-in-out;
+}
+
+::view-transition-group(theme-toggle-layer),
+::view-transition-group(top-secret-layer) {
+    animation-duration: 500ms;
+    animation-timing-function: ease-in-out;
+    z-index: 10000;
+}
+
+::view-transition-old(theme-toggle-layer),
+::view-transition-new(theme-toggle-layer),
+::view-transition-old(top-secret-layer),
+::view-transition-new(top-secret-layer) {
+    animation-duration: 500ms;
+    animation-timing-function: ease-in-out;
 }
 
 .content {
@@ -94,6 +197,7 @@ canvas {
     text-align: center;
     opacity: 0;
     transition: opacity 0.8s ease;
+    view-transition-name: content-layer;
 }
 
 .content.visible {
@@ -104,19 +208,19 @@ canvas {
     background: transparent;
     border: none;
     color: #fff;
-    font-family: "Courier New", Courier, monospace;
+    font-family: 'SanFrancisco', -apple-system, BlinkMacSystemFont, sans-serif;
     font-size: 3rem;
     font-weight: bold;
     outline: none;
     user-select: auto;
     -webkit-user-select: auto;
     text-align: center;
-    transition: transform 0.1s ease-out;
+    transition: transform 0.1s ease-out, color 0.3s ease;
     transform-origin: center center;
 }
 
-.nick-input:hover {
-    /* Scaling is handled by JS to prevent transform clashes during physics interaction */
+html.light-theme .nick-input {
+    color: #000;
 }
 
 .links {
@@ -130,14 +234,198 @@ canvas {
     color: #fff;
     text-decoration: none;
     font-size: 1.5rem;
-    transition: transform 0.1s ease-out, text-shadow 0.2s ease;
+    transition: transform 0.1s ease-out, text-shadow 0.2s ease, color 0.3s ease;
     cursor: pointer;
     width: fit-content;
     display: inline-block;
     transform-origin: center center;
 }
 
+html.light-theme .link {
+    color: #000;
+}
+
 .link:hover {
-    /* Scaling is handled by JS to prevent transform clashes during physics interaction */
     text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+}
+
+html.light-theme .link:hover {
+    text-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Theme Toggle Button */
+#theme-toggle {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    z-index: 10;
+    overflow: hidden;
+    outline: none;
+    transition: border-color 0.3s, background-color 0.3s, color 0.3s;
+    view-transition-name: theme-toggle-layer;
+}
+
+#theme-toggle:hover {
+    border-color: rgba(255, 255, 255, 0.6);
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+html.light-theme #theme-toggle {
+    border-color: rgba(0, 0, 0, 0.2);
+    color: #000;
+}
+
+html.light-theme #theme-toggle:hover {
+    border-color: rgba(0, 0, 0, 0.6);
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.icon-wrapper {
+    position: relative;
+    width: 24px;
+    height: 24px;
+}
+
+.moon-icon, .sun-icon {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease;
+}
+
+/* Dark Mode states (showing Moon) */
+.sun-icon {
+    opacity: 0;
+    transform: rotate(90deg) scale(0);
+}
+
+.moon-icon {
+    opacity: 1;
+    transform: rotate(0) scale(1);
+}
+
+/* Light Mode states (showing Sun) */
+html.light-theme .sun-icon {
+    opacity: 1;
+    transform: rotate(0) scale(1);
+}
+
+html.light-theme .moon-icon {
+    opacity: 0;
+    transform: rotate(-90deg) scale(0);
+}
+
+/* View Transitions Clip Path (Telegram style circular transition) */
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+    z-index: 1;
+}
+
+::view-transition-new(root) {
+    z-index: 9999;
+}
+
+/* Top Secret Button */
+#top-secret {
+    position: absolute;
+    bottom: 30px;
+    right: 30px;
+    background: transparent;
+    border: 1px solid rgba(255, 0, 0, 0.3);
+    color: rgba(255, 0, 0, 0.5);
+    font-family: "Courier New", Courier, monospace;
+    font-size: 0.8rem;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    z-index: 10;
+    outline: none;
+    transition: all 0.3s;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    view-transition-name: top-secret-layer;
+}
+
+#top-secret:hover {
+    border-color: rgba(255, 0, 0, 0.8);
+    color: rgba(255, 0, 0, 1);
+    background-color: rgba(255, 0, 0, 0.1);
+    box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+}
+
+#explosion-message {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2; /* Below falling characters */
+    text-align: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 1s ease;
+}
+
+#explosion-message.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+#explosion-title {
+    font-size: 2rem;
+    margin-bottom: 20px;
+    color: #ff3333;
+    text-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+}
+
+#explosion-btn {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #fff;
+    padding: 10px 20px;
+    font-size: 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.3s;
+}
+
+#explosion-btn:hover {
+    border-color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 600px) {
+    .nick-input {
+        font-size: 2rem;
+    }
+    .link {
+        font-size: 1.2rem;
+    }
+    .content {
+        gap: 15px;
+    }
+    #explosion-title {
+        font-size: 1.5rem;
+    }
+    #top-secret {
+        font-size: 0.7rem;
+        padding: 6px 10px;
+    }
 }
