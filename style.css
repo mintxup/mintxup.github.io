@@ -6,7 +6,7 @@
 
 @font-face {
     font-family: 'SanFrancisco';
-    src: url('san-francisco.otf') format('opentype');
+    src: url('san-francisco.woff') format('woff');
     font-weight: normal;
     font-style: normal;
 }
@@ -328,11 +328,20 @@ html.light-theme .link::after {
 }
 
 /* Theme Toggle Button */
-#theme-toggle {
+/* Controls Container */
+.controls-container {
     position: absolute;
     bottom: 30px;
     left: 50%;
     transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    z-index: 10;
+}
+
+/* Theme Toggle Button */
+#theme-toggle {
     background: transparent;
     border: 1px solid rgba(255, 255, 255, 0.2);
     color: #fff;
@@ -343,7 +352,6 @@ html.light-theme .link::after {
     justify-content: center;
     align-items: center;
     cursor: pointer;
-    z-index: 10;
     overflow: hidden;
     outline: none;
     transition: border-color 0.3s, background-color 0.3s, color 0.3s, transform 0.15s ease;
@@ -358,7 +366,7 @@ html.light-theme .link::after {
 #theme-toggle.tap-active {
     border-color: rgba(255, 255, 255, 0.6);
     background-color: rgba(255, 255, 255, 0.08);
-    transform: translateX(-50%) scale(0.92);
+    transform: scale(0.92);
 }
 
 html.light-theme #theme-toggle {
@@ -375,6 +383,8 @@ html.light-theme #theme-toggle.tap-active {
     border-color: rgba(0, 0, 0, 0.6);
     background-color: rgba(0, 0, 0, 0.08);
 }
+
+
 
 .icon-wrapper {
     position: relative;
@@ -558,7 +568,7 @@ html.light-theme #touch-indicator.charging {
 
 /* Safe area support for notched devices */
 @supports (padding: env(safe-area-inset-bottom)) {
-    #theme-toggle {
+    .controls-container {
         bottom: calc(30px + env(safe-area-inset-bottom));
     }
     #top-secret {
@@ -634,8 +644,10 @@ html.light-theme #touch-indicator.charging {
     .content {
         gap: 10px;
     }
-    #theme-toggle {
+    .controls-container {
         bottom: 15px;
+    }
+    #theme-toggle {
         width: 44px;
         height: 44px;
     }

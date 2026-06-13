@@ -33,7 +33,7 @@ let entered = false;
 const assetsToLoad = [
     { url: 'startup.mp3', size: 53636, type: 'audio' },
     { url: 'boom.mp3', size: 32952, type: 'audio' },
-    { url: 'san-francisco.otf', size: 2230364, type: 'font' }
+    { url: 'san-francisco.woff', size: 1512432, type: 'font' }
 ];
 
 const totalBytes = assetsToLoad.reduce((sum, asset) => sum + asset.size, 0);
@@ -159,7 +159,11 @@ function checkLoadingComplete() {
             progressBarContainer.style.display = 'none';
             
             const clickToEnter = document.getElementById('click-to-enter');
-            clickToEnter.textContent = isTouchDevice ? 'Tap to enter' : 'Click to enter';
+            const rawLang = (navigator.language || navigator.userLanguage || 'en').toLowerCase();
+            const isRu = rawLang.startsWith('ru') || rawLang.startsWith('be') || rawLang.startsWith('uk');
+            clickToEnter.textContent = isRu 
+                ? (isTouchDevice ? 'Коснитесь, чтобы войти' : 'Нажмите, чтобы войти')
+                : (isTouchDevice ? 'Tap to enter' : 'Click to enter');
             clickToEnter.classList.remove('hidden');
             
             const loader = document.getElementById('loader-overlay');
@@ -204,7 +208,47 @@ const hintsTranslations = {
     ]
 };
 
-function initHints() {
+let currentLang = 'en';
+
+function applyTranslations() {
+    const rawLang = (navigator.language || navigator.userLanguage || 'en').toLowerCase();
+    if (rawLang.startsWith('ru') || rawLang.startsWith('be') || rawLang.startsWith('uk')) {
+        currentLang = 'ru';
+    } else {
+        currentLang = 'en';
+    }
+
+    // Update Theme Toggle aria-label
+    const themeToggle = document.getElementById('theme-toggle');
+    if (themeToggle) {
+        themeToggle.setAttribute('aria-label', currentLang === 'ru' ? 'Сменить тему' : 'Toggle Theme');
+    }
+
+    // Update Top Secret Button text
+    const topSecretBtn = document.getElementById('top-secret');
+    if (topSecretBtn) {
+        topSecretBtn.textContent = currentLang === 'ru' ? 'Секретно' : 'Top Secret';
+    }
+
+    // Update links
+    if (typeof originalLinksText !== 'undefined' && originalLinksText.length >= 3) {
+        originalLinksText[0] = currentLang === 'ru' ? 'Телеграм' : 'Telegram';
+        originalLinksText[1] = currentLang === 'ru' ? 'Ютуб' : 'Youtube';
+        originalLinksText[2] = currentLang === 'ru' ? 'Блог' : 'Blog';
+    }
+
+    // Update loader text
+    const clickToEnter = document.getElementById('click-to-enter');
+    if (clickToEnter) {
+        if (currentLang === 'ru') {
+            clickToEnter.textContent = isTouchDevice ? 'Коснитесь, чтобы войти' : 'Нажмите, чтобы войти';
+        } else {
+            clickToEnter.textContent = isTouchDevice ? 'Tap to enter' : 'Click to enter';
+        }
+    }
+}
+
+function drawHintsContent() {
     const container = document.getElementById('hints-container');
     if (!container) return;
     
@@ -213,14 +257,7 @@ function initHints() {
         completed = JSON.parse(localStorage.getItem('mintxup_completed_hints')) || {};
     } catch(e) {}
     
-    // Detect language
-    const lang = (navigator.language || navigator.userLanguage || 'en').toLowerCase();
-    let selectedLang = 'en'; // default
-    if (lang.startsWith('ru') || lang.startsWith('be') || lang.startsWith('uk')) selectedLang = 'ru';
-    else if (lang.startsWith('es')) selectedLang = 'es';
-    else if (lang.startsWith('zh')) selectedLang = 'zh';
-
-    const hints = hintsTranslations[selectedLang];
+    const hints = hintsTranslations[currentLang] || hintsTranslations['en'];
     const hintIndexToId = {
         1: 'charge',
         2: 'charge',
@@ -248,6 +285,11 @@ function initHints() {
         container.style.opacity = '0';
     }
 }
+
+function initHints() {
+    drawHintsContent();
+}
+
 
 function completeHint(hintId) {
     let completed = {};
@@ -574,16 +616,6 @@ if (blogLink) {
 function showBlogError() {
     if (document.getElementById('blog-popup')) return;
 
-    const rawLang = (navigator.language || navigator.userLanguage || 'en').toLowerCase();
-    let selectedLang = 'en';
-    if (rawLang.startsWith('ru') || rawLang.startsWith('be') || rawLang.startsWith('uk')) {
-        selectedLang = 'ru';
-    } else if (rawLang.startsWith('es')) {
-        selectedLang = 'es';
-    } else if (rawLang.startsWith('zh')) {
-        selectedLang = 'zh';
-    }
-
     const errorMessages = {
         ru: "404, мой кот съел эту страницу, извините....",
         en: "404, my cat ate this page, sorry....",
@@ -591,7 +623,7 @@ function showBlogError() {
         zh: "404，我的猫把这个页面吃掉了，抱歉……"
     };
 
-    const msg = errorMessages[selectedLang] || errorMessages['en'];
+    const msg = errorMessages[currentLang] || errorMessages['en'];
 
     const popup = document.createElement('div');
     popup.id = 'blog-popup';
@@ -921,6 +953,8 @@ function releaseShockwave(x, y) {
 const themeToggle = document.getElementById('theme-toggle');
 addTapFeedback(themeToggle);
 
+
+
 // Top Secret Feature
 const topSecretBtn = document.getElementById('top-secret');
 addTapFeedback(topSecretBtn);
@@ -1037,6 +1071,9 @@ function triggerExplosion(isOvercharge = false) {
     themeToggle.style.opacity = '0';
     themeToggle.style.pointerEvents = 'none';
     themeToggle.disabled = true;
+
+
+
     topSecretBtn.style.opacity = '0';
     topSecretBtn.style.pointerEvents = 'none';
     topSecretBtn.disabled = true;
@@ -1210,6 +1247,7 @@ links.forEach(link => {
 });
 nickInput.value = '';
 adjustInputWidth();
+applyTranslations();
 
 function typeWriter() {
     let isInputFinished = false;
