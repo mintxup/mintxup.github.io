@@ -562,6 +562,77 @@ function addTapFeedback(element) {
 // Add tap feedback to interactive elements
 document.querySelectorAll('.link').forEach(link => addTapFeedback(link));
 
+// Blog link popup error
+const blogLink = document.getElementById('blog-link');
+if (blogLink) {
+    blogLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        showBlogError();
+    });
+}
+
+function showBlogError() {
+    if (document.getElementById('blog-popup')) return;
+
+    const rawLang = (navigator.language || navigator.userLanguage || 'en').toLowerCase();
+    let selectedLang = 'en';
+    if (rawLang.startsWith('ru') || rawLang.startsWith('be') || rawLang.startsWith('uk')) {
+        selectedLang = 'ru';
+    } else if (rawLang.startsWith('es')) {
+        selectedLang = 'es';
+    } else if (rawLang.startsWith('zh')) {
+        selectedLang = 'zh';
+    }
+
+    const errorMessages = {
+        ru: "404, мой кот съел эту страницу, извините....",
+        en: "404, my cat ate this page, sorry....",
+        es: "404, mi gato se comió esta página, lo siento....",
+        zh: "404，我的猫把这个页面吃掉了，抱歉……"
+    };
+
+    const msg = errorMessages[selectedLang] || errorMessages['en'];
+
+    const popup = document.createElement('div');
+    popup.id = 'blog-popup';
+    popup.role = 'alert';
+    popup.innerHTML = `
+        <div class="blog-popup-content">
+            <span class="blog-popup-icon">🐱</span>
+            <p class="blog-popup-text">${msg}</p>
+            <button class="blog-popup-close" aria-label="Close">&times;</button>
+        </div>
+    `;
+
+    document.body.appendChild(popup);
+    void popup.offsetHeight; // Force reflow
+    popup.classList.add('visible');
+
+    const closeBtn = popup.querySelector('.blog-popup-close');
+    addTapFeedback(closeBtn);
+    
+    const dismissPopup = () => {
+        popup.classList.remove('visible');
+        popup.addEventListener('transitionend', () => {
+            popup.remove();
+        }, { once: true });
+    };
+
+    closeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dismissPopup();
+    });
+
+    const autoDismissTimeout = setTimeout(() => {
+        dismissPopup();
+    }, 5000);
+
+    popup.addEventListener('click', () => {
+        clearTimeout(autoDismissTimeout);
+        dismissPopup();
+    });
+}
+
 // Particle System
 const particles = [];
 const numParticles = isTouchDevice ? 150 : 250;

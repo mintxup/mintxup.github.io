@@ -718,3 +718,101 @@ html.light-theme #hints-container {
 .content.visible #hints-container {
     animation: fadeInHints 2s ease 1.5s forwards;
 }
+
+/* Blog Popup Styling */
+#blog-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 10000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#blog-popup.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.blog-popup-content {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: 16px;
+    padding: 24px 32px;
+    max-width: 90%;
+    width: 400px;
+    text-align: center;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    position: relative;
+    transform: scale(0.9) translateY(20px);
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    color: #fff;
+}
+
+html.light-theme .blog-popup-content {
+    background: rgba(255, 255, 255, 0.75);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    color: #000;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+#blog-popup.visible .blog-popup-content {
+    transform: scale(1) translateY(0);
+}
+
+.blog-popup-icon {
+    font-size: 3rem;
+    display: block;
+    margin-bottom: 12px;
+    animation: cat-shake 1.5s ease-in-out infinite alternate;
+    transform-origin: bottom center;
+}
+
+@keyframes cat-shake {
+    0% { transform: rotate(-5deg); }
+    100% { transform: rotate(5deg); }
+}
+
+.blog-popup-text {
+    font-size: 1.1rem;
+    line-height: 1.5;
+    margin: 0 10px;
+    font-weight: 500;
+}
+
+.blog-popup-close {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    background: transparent;
+    border: none;
+    color: inherit;
+    font-size: 1.8rem;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.2s, transform 0.2s;
+    line-height: 1;
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.blog-popup-close:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.blog-popup-close.tap-active {
+    opacity: 1;
+    transform: scale(0.9);
+}
