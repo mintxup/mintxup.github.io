@@ -1,10 +1,19 @@
 const canvas = document.getElementById('bg-canvas');
 const ctx = canvas.getContext('2d');
 
+// Device detection
+const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
 let width, height;
 function resize() {
-    width = canvas.width = window.innerWidth;
-    height = canvas.height = window.innerHeight;
+    width = window.innerWidth;
+    height = window.innerHeight;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    canvas.style.width = width + 'px';
+    canvas.style.height = height + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 window.addEventListener('resize', resize);
 resize();
@@ -21,8 +30,8 @@ let entered = false;
 async function loadSound() {
     const progressBar = document.getElementById('progress-bar');
     try {
-        const response = await fetch('startup.opus');
-        if (!response.ok) throw new Error("Failed to load startup.opus");
+        const response = await fetch('startup.mp3');
+        if (!response.ok) throw new Error("Failed to load startup.mp3");
         
         const reader = response.body.getReader();
         const contentLength = +response.headers.get('Content-Length') || 49538;
@@ -85,14 +94,18 @@ function checkLoadingComplete() {
             progressBarContainer.style.display = 'none';
             
             const clickToEnter = document.getElementById('click-to-enter');
+            clickToEnter.textContent = isTouchDevice ? 'Tap to enter' : 'Click to enter';
             clickToEnter.classList.remove('hidden');
             
-            document.getElementById('loader-overlay').addEventListener('click', enterSite);
+            const loader = document.getElementById('loader-overlay');
+            loader.addEventListener('click', enterSite);
+            loader.addEventListener('touchstart', enterSite, { passive: false });
         }, 500);
     }
 }
 
-function enterSite() {
+function enterSite(e) {
+    if (e) e.preventDefault();
     if (entered) return;
     entered = true;
 
@@ -102,7 +115,7 @@ function enterSite() {
         loader.style.display = 'none';
     }, 500);
 
-    const soundPath = audioBlobUrl || 'startup.opus';
+    const soundPath = audioBlobUrl || 'startup.mp3';
     const audio = new Audio(soundPath);
     audio.play().catch(err => console.warn("Audio play blocked by browser:", err));
 
@@ -113,8 +126,18 @@ function enterSite() {
 loadSound();
 loadFont();
 
-// Input Logic
+// Touch indicator setup
+const touchIndicator = document.getElementById('touch-indicator');
+if (isTouchDevice) {
+    touchIndicator.classList.add('enabled');
+}
+
+// Mobile: make nick input readonly to prevent virtual keyboard
 const nickInput = document.getElementById('nick');
+if (isTouchDevice) {
+    nickInput.setAttribute('readonly', true);
+    nickInput.style.pointerEvents = 'none';
+}
 const originalNick = "mintxup";
 let typingTimer;
 let deletingInterval;
@@ -151,6 +174,9 @@ function startReverting() {
 }
 
 function setupInputListeners() {
+    // Only allow editing on desktop
+    if (isTouchDevice) return;
+    
     nickInput.addEventListener('input', () => {
         adjustInputWidth();
         clearTimeout(typingTimer);
@@ -162,9 +188,27 @@ function setupInputListeners() {
     });
 }
 
+// Tap feedback utility for touch devices
+function addTapFeedback(element) {
+    element.addEventListener('touchstart', () => {
+        element.classList.add('tap-active');
+    }, { passive: true });
+    
+    element.addEventListener('touchend', () => {
+        setTimeout(() => element.classList.remove('tap-active'), 150);
+    }, { passive: true });
+    
+    element.addEventListener('touchcancel', () => {
+        element.classList.remove('tap-active');
+    }, { passive: true });
+}
+
+// Add tap feedback to interactive elements
+document.querySelectorAll('.link').forEach(link => addTapFeedback(link));
+
 // Particle System
 const particles = [];
-const numParticles = 250;
+const numParticles = isTouchDevice ? 150 : 250;
 let shockwaves = [];
 let powerCircleRadius = 0;
 
@@ -172,9 +216,14 @@ const domElements = [nickInput, ...document.querySelectorAll('.link')];
 const bumps = new Map();
 domElements.forEach(el => bumps.set(el, { x: 0, y: 0, rot: 0, hovered: false }));
 
+// Hover detection — only for mouse pointer
 domElements.forEach(el => {
-    el.addEventListener('mouseenter', () => bumps.get(el).hovered = true);
-    el.addEventListener('mouseleave', () => bumps.get(el).hovered = false);
+    el.addEventListener('pointerenter', (e) => {
+        if (e.pointerType === 'mouse') bumps.get(el).hovered = true;
+    });
+    el.addEventListener('pointerleave', () => {
+        bumps.get(el).hovered = false;
+    });
 });
 
 class Particle {
@@ -194,7 +243,7 @@ class Particle {
         this.orbitSpeed = (Math.random() * 0.05 + 0.02) * (Math.random() < 0.5 ? 1 : -1);
     }
     
-    update(mouseX, mouseY, isMouseDown, frameCollisions) {
+    update(cursorX, cursorY, isActive, frameCollisions) {
         this.lastX = this.x;
         this.lastY = this.y;
 
@@ -213,10 +262,10 @@ class Particle {
             return;
         }
 
-        if (isMouseDown) {
+        if (isActive) {
             this.orbitAngle += this.orbitSpeed;
-            const targetX = mouseX + Math.cos(this.orbitAngle) * this.orbitRadius;
-            const targetY = mouseY + Math.sin(this.orbitAngle) * this.orbitRadius;
+            const targetX = cursorX + Math.cos(this.orbitAngle) * this.orbitRadius;
+            const targetY = cursorY + Math.sin(this.orbitAngle) * this.orbitRadius;
 
             const dx = targetX - this.x;
             const dy = targetY - this.y;
@@ -282,14 +331,14 @@ class Particle {
         }
     }
     
-    draw(ctx, isMouseDown) {
+    draw(ctx, isActive) {
         ctx.beginPath();
         ctx.lineWidth = this.radius * 2;
         ctx.lineCap = "round";
         ctx.moveTo(this.lastX, this.lastY);
         ctx.lineTo(this.x, this.y);
         
-        if (isMouseDown) {
+        if (isActive) {
             ctx.strokeStyle = isLightTheme ? `rgba(0, 0, 0, 0.8)` : `rgba(255, 255, 255, 0.8)`;
         } else {
             // Adapt particle colors for light theme (darker colors for readability on white background)
@@ -304,19 +353,26 @@ for (let i = 0; i < numParticles; i++) {
     particles.push(new Particle());
 }
 
-let mouse = { x: width / 2, y: height / 2 };
-let isMouseDown = false;
+// Unified cursor/touch position
+let cursor = { x: width / 2, y: height / 2 };
+let isActive = false; // true when mouse is held down or finger is touching
+let activeTouchId = null;
 
+// Prevent default touch behavior to stop scrolling/zooming
+document.addEventListener('touchmove', (e) => { e.preventDefault(); }, { passive: false });
+
+// ─── POINTER EVENTS (mouse on desktop) ───
 window.addEventListener('pointermove', (e) => {
-    mouse.x = e.clientX;
-    mouse.y = e.clientY;
+    if (e.pointerType === 'touch') return; // handled by touch events
+    cursor.x = e.clientX;
+    cursor.y = e.clientY;
 });
 
 window.addEventListener('pointerdown', (e) => {
+    if (e.pointerType === 'touch') return; // handled by touch events
+    
     if (typeof isDestroyed !== 'undefined' && isDestroyed) {
-        if (e.target.closest('#explosion-btn')) {
-            return;
-        }
+        if (e.target.closest('#explosion-btn')) return;
         document.body.classList.remove('shake-cursor');
         void document.body.offsetWidth; // trigger reflow
         document.body.classList.add('shake-cursor');
@@ -324,17 +380,95 @@ window.addEventListener('pointerdown', (e) => {
     }
     // Prevent charging when clicking buttons
     if (entered && e.target.closest('#theme-toggle') === null && e.target.closest('#top-secret') === null && e.target.closest('#explosion-btn') === null) {
-        isMouseDown = true;
+        isActive = true;
     }
 });
 
-window.addEventListener('pointerup', () => {
-    if (!entered || !isTypewriterFinished || !isMouseDown) return;
-    isMouseDown = false;
+window.addEventListener('pointerup', (e) => {
+    if (e.pointerType === 'touch') return; // handled by touch events
+    if (!entered || !isTypewriterFinished || !isActive) return;
+    isActive = false;
     
+    releaseShockwave(cursor.x, cursor.y);
+});
+
+// ─── TOUCH EVENTS (mobile) ───
+canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    
+    if (typeof isDestroyed !== 'undefined' && isDestroyed) {
+        document.body.classList.remove('shake-cursor');
+        void document.body.offsetWidth;
+        document.body.classList.add('shake-cursor');
+        return;
+    }
+    if (!entered || !isTypewriterFinished) return;
+    
+    // Use the first touch only
+    const t = e.changedTouches[0];
+    activeTouchId = t.identifier;
+    cursor.x = t.clientX;
+    cursor.y = t.clientY;
+    isActive = true;
+    
+    // Show touch indicator
+    touchIndicator.style.left = cursor.x + 'px';
+    touchIndicator.style.top = cursor.y + 'px';
+    touchIndicator.classList.add('active');
+}, { passive: false });
+
+canvas.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    if (!isActive) return;
+    
+    for (let i = 0; i < e.changedTouches.length; i++) {
+        const t = e.changedTouches[i];
+        if (t.identifier === activeTouchId) {
+            cursor.x = t.clientX;
+            cursor.y = t.clientY;
+            
+            touchIndicator.style.left = cursor.x + 'px';
+            touchIndicator.style.top = cursor.y + 'px';
+            break;
+        }
+    }
+}, { passive: false });
+
+canvas.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    
+    for (let i = 0; i < e.changedTouches.length; i++) {
+        const t = e.changedTouches[i];
+        if (t.identifier === activeTouchId) {
+            if (!entered || !isTypewriterFinished || !isActive) {
+                isActive = false;
+                activeTouchId = null;
+                touchIndicator.classList.remove('active', 'charging');
+                return;
+            }
+            
+            isActive = false;
+            activeTouchId = null;
+            touchIndicator.classList.remove('active', 'charging');
+            
+            releaseShockwave(cursor.x, cursor.y);
+            break;
+        }
+    }
+}, { passive: false });
+
+canvas.addEventListener('touchcancel', () => {
+    isActive = false;
+    activeTouchId = null;
+    powerCircleRadius = 0;
+    touchIndicator.classList.remove('active', 'charging');
+}, { passive: false });
+
+// ─── SHOCKWAVE RELEASE (shared by mouse and touch) ───
+function releaseShockwave(x, y) {
     shockwaves.push({
-        x: mouse.x,
-        y: mouse.y,
+        x: x,
+        y: y,
         radius: powerCircleRadius,
         opacity: 1
     });
@@ -343,8 +477,8 @@ window.addEventListener('pointerup', () => {
     const baseForce = 10 * chargeMultiplier;
     
     particles.forEach(p => {
-        const dx = p.x - mouse.x;
-        const dy = p.y - mouse.y;
+        const dx = p.x - x;
+        const dy = p.y - y;
         const dist = Math.sqrt(dx * dx + dy * dy);
         
         const force = baseForce + ((1500 * chargeMultiplier) / (dist + 50)); 
@@ -360,13 +494,17 @@ window.addEventListener('pointerup', () => {
             p.vy += Math.sin(angle) * force;
         }
     });
-});
+    
+    powerCircleRadius = 0;
+}
 
 // Theme Toggle Event Listener with Telegram Transition Effect
 const themeToggle = document.getElementById('theme-toggle');
+addTapFeedback(themeToggle);
 
 // Top Secret Feature
 const topSecretBtn = document.getElementById('top-secret');
+addTapFeedback(topSecretBtn);
 let isDestroyed = false;
 const fallingChars = [];
 
@@ -388,6 +526,8 @@ topSecretBtn.addEventListener('click', () => {
     if (isLightTheme) {
         document.documentElement.classList.remove('light-theme');
         isLightTheme = false;
+        const metaTheme = document.querySelector('meta[name="theme-color"]');
+        if (metaTheme) metaTheme.content = '#000000';
     }
 
     document.getElementById('red-flash').classList.add('active');
@@ -398,6 +538,7 @@ topSecretBtn.addEventListener('click', () => {
     document.getElementById('explosion-title').textContent = msg.title;
     const expBtn = document.getElementById('explosion-btn');
     expBtn.textContent = msg.btn;
+    addTapFeedback(expBtn);
     expBtn.onclick = () => window.location.reload();
     
     document.getElementById('explosion-message').classList.add('visible');
@@ -428,16 +569,23 @@ topSecretBtn.addEventListener('click', () => {
         p.vx = (Math.random() - 0.5) * 15;
         p.vy = (Math.random() - 0.5) * 15 - 10;
     });
+    
+    // Reset touch state
+    isActive = false;
+    activeTouchId = null;
+    powerCircleRadius = 0;
+    touchIndicator.classList.remove('active', 'charging');
 });
 
 function createFallingChar(char, x, y, isInput) {
     if (char === ' ') return;
+    const isMobileSize = window.innerWidth <= 600;
     const span = document.createElement('span');
     span.textContent = char;
     span.style.position = 'absolute';
     span.style.left = x + 'px';
     span.style.top = y + 'px';
-    span.style.fontSize = isInput ? '3rem' : '1.5rem';
+    span.style.fontSize = isInput ? (isMobileSize ? '2.2rem' : '3rem') : (isMobileSize ? '1.3rem' : '1.5rem');
     span.style.fontWeight = isInput ? 'bold' : 'normal';
     span.style.color = isLightTheme ? '#000' : '#fff';
     span.style.zIndex = '100';
@@ -460,8 +608,9 @@ function createFallingChar(char, x, y, isInput) {
 themeToggle.addEventListener('click', (e) => {
     if (!entered || !isTypewriterFinished) return;
 
-    const x = e.clientX;
-    const y = e.clientY;
+    const rect = themeToggle.getBoundingClientRect();
+    const x = isTouchDevice ? (rect.left + rect.width / 2) : e.clientX;
+    const y = isTouchDevice ? (rect.top + rect.height / 2) : e.clientY;
     const endRadius = Math.hypot(
         Math.max(x, window.innerWidth - x),
         Math.max(y, window.innerHeight - y)
@@ -471,6 +620,12 @@ themeToggle.addEventListener('click', (e) => {
         document.documentElement.classList.add('no-transition');
         document.documentElement.classList.toggle('light-theme');
         isLightTheme = !isLightTheme;
+        
+        // Update meta theme-color for mobile browsers
+        const metaTheme = document.querySelector('meta[name="theme-color"]');
+        if (metaTheme) {
+            metaTheme.content = isLightTheme ? '#ffffff' : '#000000';
+        }
     };
 
     if (document.startViewTransition) {
@@ -581,26 +736,31 @@ function animate() {
 
     const strokeColor = isLightTheme ? '0, 0, 0' : '255, 255, 255';
 
-    if (isMouseDown) {
+    if (isActive) {
         powerCircleRadius += 0.4;
+        
+        // Update touch indicator charging state
+        if (isTouchDevice && powerCircleRadius > 5) {
+            touchIndicator.classList.add('charging');
+        }
         
         const chargeMultiplier = 1 + (powerCircleRadius * 0.03);
         const gradientOpacity = Math.min(0.45, (chargeMultiplier - 1) * 0.25);
         
         if (gradientOpacity > 0) {
-            const grad = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, powerCircleRadius * 2.5);
+            const grad = ctx.createRadialGradient(cursor.x, cursor.y, 0, cursor.x, cursor.y, powerCircleRadius * 2.5);
             grad.addColorStop(0, `rgba(${strokeColor}, ${gradientOpacity})`);
             grad.addColorStop(0.3, `rgba(${strokeColor}, ${gradientOpacity * 0.5})`);
             grad.addColorStop(1, `rgba(${strokeColor}, 0)`);
             
             ctx.beginPath();
-            ctx.arc(mouse.x, mouse.y, powerCircleRadius * 2.5, 0, Math.PI * 2);
+            ctx.arc(cursor.x, cursor.y, powerCircleRadius * 2.5, 0, Math.PI * 2);
             ctx.fillStyle = grad;
             ctx.fill();
         }
         
         ctx.beginPath();
-        ctx.arc(mouse.x, mouse.y, powerCircleRadius, 0, Math.PI * 2);
+        ctx.arc(cursor.x, cursor.y, powerCircleRadius, 0, Math.PI * 2);
         ctx.strokeStyle = `rgba(${strokeColor}, ${0.4 + Math.sin(Date.now() / 80) * 0.15})`;
         ctx.lineWidth = 1.5;
         ctx.stroke();
@@ -626,8 +786,8 @@ function animate() {
     }
 
     particles.forEach(p => {
-        p.update(mouse.x, mouse.y, isMouseDown, frameCollisions);
-        p.draw(ctx, isMouseDown);
+        p.update(cursor.x, cursor.y, isActive, frameCollisions);
+        p.draw(ctx, isActive);
     });
 
     if (isTypewriterFinished && !isDestroyed) {
