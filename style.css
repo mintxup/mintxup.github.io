@@ -159,47 +159,7 @@ canvas {
     height: 100vh;
     z-index: 1;
     touch-action: none;
-    view-transition-name: canvas-layer;
-}
-
-::view-transition-group(canvas-layer) {
-    animation: none;
-}
-
-::view-transition-old(canvas-layer) {
-    display: none;
-}
-
-::view-transition-new(canvas-layer) {
-    animation: none;
-    mix-blend-mode: normal;
-}
-
-::view-transition-group(content-layer) {
-    animation-duration: 500ms;
-    animation-timing-function: ease-in-out;
-    z-index: 10000;
-}
-
-::view-transition-old(content-layer),
-::view-transition-new(content-layer) {
-    animation-duration: 500ms;
-    animation-timing-function: ease-in-out;
-}
-
-::view-transition-group(theme-toggle-layer),
-::view-transition-group(top-secret-layer) {
-    animation-duration: 500ms;
-    animation-timing-function: ease-in-out;
-    z-index: 10000;
-}
-
-::view-transition-old(theme-toggle-layer),
-::view-transition-new(theme-toggle-layer),
-::view-transition-old(top-secret-layer),
-::view-transition-new(top-secret-layer) {
-    animation-duration: 500ms;
-    animation-timing-function: ease-in-out;
+    view-transition-name: none;
 }
 
 .content {
@@ -215,7 +175,6 @@ canvas {
     text-align: center;
     opacity: 0;
     transition: opacity 0.8s ease;
-    view-transition-name: content-layer;
 }
 
 .content.visible {
@@ -388,7 +347,6 @@ html.light-theme .link::after {
     overflow: hidden;
     outline: none;
     transition: border-color 0.3s, background-color 0.3s, color 0.3s, transform 0.15s ease;
-    view-transition-name: theme-toggle-layer;
     -webkit-tap-highlight-color: transparent;
 }
 
@@ -453,7 +411,18 @@ html.light-theme .moon-icon {
     transform: rotate(-90deg) scale(0);
 }
 
-/* View Transitions Clip Path (Telegram style circular transition) */
+/* Icon spin animation on theme switch */
+@keyframes spinSwitch {
+    0% { transform: rotate(0deg) scale(1); }
+    40% { transform: rotate(180deg) scale(0.6); }
+    100% { transform: rotate(360deg) scale(1); }
+}
+
+.icon-wrapper.spin-switch {
+    animation: spinSwitch 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* View Transitions Clip Path (circular transition) */
 ::view-transition-old(root),
 ::view-transition-new(root) {
     animation: none;
@@ -486,7 +455,6 @@ html.light-theme .moon-icon {
     transition: all 0.3s;
     text-transform: uppercase;
     letter-spacing: 1px;
-    view-transition-name: top-secret-layer;
     -webkit-tap-highlight-color: transparent;
 }
 
@@ -692,4 +660,61 @@ html.light-theme #touch-indicator.charging {
     #explosion-title {
         font-size: 1.3rem;
     }
+}
+
+/* Hints Container */
+#hints-container {
+    margin-top: 10px;
+    color: rgba(255, 255, 255, 0.35);
+    font-size: 0.85rem;
+    line-height: 1.6;
+    text-align: center;
+    max-width: 90vw;
+    opacity: 0;
+    transition: color 0.3s ease;
+    pointer-events: none; /* Make sure it doesn't block clicks */
+}
+
+#hints-container p {
+    margin: 4px 0;
+}
+
+html.light-theme #hints-container {
+    color: rgba(0, 0, 0, 0.35);
+}
+
+.hint-item {
+    transition: text-decoration 0.3s ease, opacity 0.5s ease, max-height 0.4s ease, margin 0.4s ease, padding 0.4s ease;
+    max-height: 100px;
+    opacity: 1;
+    overflow: hidden;
+}
+
+.hint-item.completed {
+    text-decoration: line-through;
+    opacity: 0.45;
+}
+
+.hint-item.removing {
+    opacity: 0 !important;
+    max-height: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+@keyframes fadeInHints {
+    0% { opacity: 0; transform: translateY(10px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 600px) {
+    #hints-container {
+        font-size: 0.75rem;
+    }
+}
+
+.content.visible #hints-container {
+    animation: fadeInHints 2s ease 1.5s forwards;
 }
