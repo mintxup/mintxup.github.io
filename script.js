@@ -454,7 +454,7 @@ function enterSite(e) {
     document.querySelector('.content').classList.add('visible');
     typeWriter();
 
-    // Trigger onboarding intro waves 0.5 seconds after entering
+    // Trigger onboarding intro waves 2 seconds after entering
     const introDone = localStorage.getItem('mintxup_intro_done');
     if (!introDone) {
         localStorage.setItem('mintxup_intro_done', 'true');
@@ -463,7 +463,7 @@ function enterSite(e) {
             const onboardingX = width / 2 - 130;
             const onboardingY = height / 2 + 70; // Slightly lower than center
             triggerIntroWave(isTouchDevice ? "tap" : "click", onboardingX, onboardingY);
-        }, 500);
+        }, 2000);
         setTimeout(() => {
             if (entered && !isActive) {
                 // Shift simulated charge to the left as well!
@@ -477,7 +477,7 @@ function enterSite(e) {
                 };
                 startChargeSound();
             }
-        }, 1300);
+        }, 2800);
     }
 }
 
