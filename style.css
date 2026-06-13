@@ -1,0 +1,75 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #000;
+    color: #fff;
+    font-family: "Courier New", Courier, monospace;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1;
+}
+
+.content {
+    position: absolute;
+    top: 50px;
+    left: 50px;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.nick-input {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 3rem;
+    font-weight: bold;
+    outline: none;
+    user-select: auto;
+    -webkit-user-select: auto;
+    width: 400px;
+    transition: transform 0.1s ease-out;
+}
+
+.nick-input:hover {
+    transform: scale(1.05);
+    transform-origin: left center;
+}
+
+.links {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding-left: 5px;
+}
+
+.link {
+    color: #fff;
+    text-decoration: none;
+    font-size: 1.5rem;
+    transition: transform 0.1s ease-out, text-shadow 0.2s ease;
+    cursor: pointer;
+    width: fit-content;
+    display: inline-block;
+}
+
+.link:hover {
+    transform: scale(1.1);
+    transform-origin: left center;
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+}

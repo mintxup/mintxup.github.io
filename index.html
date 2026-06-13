@@ -1,42 +1,23 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>mintxup</title>
-
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      width: 100vw;
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background: #ffffff;
-      overflow: hidden;
-      font-family: "Times New Roman", serif;
-    }
-
-    h1 {
-      color: #000;
-      font-weight: normal;
-      transition: transform 0.2s ease;
-      cursor: default;
-    }
-
-    h1:hover {
-      transform: scale(1.05);
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mintxup</title>
+    <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-  <h1>mintxup</h1>
+    <canvas id="bg-canvas"></canvas>
+    
+    <div class="content">
+        <input type="text" id="nick" class="nick-input" value="mintxup" spellcheck="false" autocomplete="off">
+        <div class="links">
+            <a href="https://t.me/mintxup" class="link" target="_blank" rel="noopener noreferrer">Telegram</a>
+            <a href="https://youtube.com/@mintxup" class="link" target="_blank" rel="noopener noreferrer">Youtube</a>
+            <a href="#" class="link" target="_blank" rel="noopener noreferrer">Blog</a>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
 </body>
 </html>
